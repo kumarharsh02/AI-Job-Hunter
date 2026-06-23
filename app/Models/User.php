@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
@@ -46,8 +46,18 @@ class User extends Authenticatable
         return $this->hasMany(Application::class);
     }
 
+    public function skillGaps(): HasMany
+    {
+        return $this->hasMany(SkillGap::class);
+    }
+
     public function activeResume(): ?Resume
     {
         return $this->resumes()->active()->first();
+    }
+
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(Referral::class);
     }
 }

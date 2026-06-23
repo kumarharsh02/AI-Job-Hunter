@@ -69,6 +69,16 @@ class JobListing extends Model
         return $this->hasMany(Application::class);
     }
 
+    public function skillGaps(): HasMany
+    {
+        return $this->hasMany(SkillGap::class);
+    }
+
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(Referral::class);
+    }
+
     public function scopeBySource(Builder $query, string $source): Builder
     {
         return $query->where('source_type', $source);
@@ -82,5 +92,53 @@ class JobListing extends Model
     public function scopeHighMatch(Builder $query, float $threshold = 70.00): Builder
     {
         return $query->where('match_score', '>=', $threshold);
+    }
+
+    public function getMatchBadgeColorAttribute(): string
+    {
+        $score = (float) $this->match_score;
+
+        if ($score >= 80) {
+            return 'green';
+        }
+
+        if ($score >= 60) {
+            return 'yellow';
+        }
+
+        if ($score >= 40) {
+            return 'orange';
+        }
+
+        return 'red';
+    }
+
+    public function getSourceIconAttribute(): string
+    {
+        return match ($this->source_type) {
+            'linkedin' => 'briefcase',
+            'naukri' => 'building-office',
+            'indeed' => 'magnifying-glass',
+            'wellfound' => 'rocket',
+            default => 'globe',
+        };
+    }
+
+    public function getSalaryDisplayAttribute(): string
+    {
+        if ($this->salary_min === null && $this->salary_max === null) {
+            return 'Not disclosed';
+        }
+
+        $currency = $this->currency ?? 'INR';
+        $symbol = $currency === 'USD' ? '$' : '₹';
+
+        if ($this->salary_min !== null && $this->salary_max !== null) {
+            return "{$symbol}{$this->salary_min} - {$symbol}{$this->salary_max}";
+        }
+
+        $value = $this->salary_min ?? $this->salary_max;
+
+        return "{$symbol}{$value}";
     }
 }
