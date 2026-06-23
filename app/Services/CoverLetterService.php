@@ -134,11 +134,11 @@ PROMPT;
 
     private function formatParsedExperience(Resume $resume): string
     {
-        if (is_array($resume->parsed_experience) && !empty($resume->parsed_experience)) {
+        if (is_array($resume->parsed_experience) && ! empty($resume->parsed_experience)) {
             return json_encode($resume->parsed_experience, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         }
 
-        if (is_array($resume->parsed_summary) && !empty($resume->parsed_summary)) {
+        if (is_array($resume->parsed_summary) && ! empty($resume->parsed_summary)) {
             return json_encode($resume->parsed_summary, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         }
 
