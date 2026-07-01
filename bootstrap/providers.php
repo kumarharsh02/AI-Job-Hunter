@@ -1,8 +1,9 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use App\Providers\OpenAiServiceProvider;
 
 return [
     AppServiceProvider::class,
-    App\Providers\OpenAiServiceProvider::class,
+    OpenAiServiceProvider::class,
 ];

@@ -1,59 +1,135 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# AI Job Hunter
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A production-ready Laravel 11 platform that automates the job search pipeline — from importing jobs via a Chrome Extension, through AI-driven resume matching and cover letter generation, to interview scheduling and follow-up reminders.
 
-## About Laravel
+## Architecture
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+```
+Chrome Extension → API Ingestion → Redis Queues → OpenAI Processing
+                                      ↓
+Dashboard ← ──────────────────────────┘
+   ├── Kanban-style job tracker with match scores
+   ├── Interview scheduling & reminders
+   ├── Referral tracking
+   └── Follow-up alerts
+```
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Tech Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Layer | Technology |
+|---|---|
+| Backend | Laravel 11, PHP 8.2+ |
+| Database | SQLite (dev) / MySQL / PostgreSQL (prod) |
+| Cache & Queues | Redis |
+| AI | OpenAI GPT-4o (JSON mode + chat) |
+| Frontend | Laravel Breeze (Blade + Tailwind CSS) |
+| Browser Extension | Chrome Manifest V3 |
+| Auth | Laravel Sanctum (API tokens) |
 
-## Learning Laravel
+## Features
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- **Chrome Extension** — One-click job import from LinkedIn, Naukri, and Indeed
+- **AI Resume Matching** — Automated score + skill gap analysis via OpenAI JSON mode
+- **AI Cover Letters** — GPT-4o generates tailored cover letters queued via Redis
+- **Application Pipeline** — Track: Draft → Applied → Contacted → Interviewing → Offer → Rejected
+- **Interview Scheduling** — Create, update, and track interviews with type (HR/Technical/Founder)
+- **Automated Reminders** — Daily `app:send-reminders` for 24hr interviews & 7-day stale applications
+- **Referral Tracking** — Track referral contacts, status (Requested/Submitted/Ghosted), and platform
+- **Email Parsing Infrastructure** — `ParseIncomingEmail` job auto-matches recruiter emails to applications
+- **Skill Gap Analysis** — Missing skills per job with categorization (technical/soft/domain)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Quick Start
 
-## Laravel Sponsors
+```bash
+# 1. Clone and install
+git clone <repo-url> && cd ai-job-hunter
+composer install
+cp .env.example .env
+php artisan key:generate
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# 2. Configure environment
+# Edit .env — set OPENAI_API_KEY, REDIS_HOST, etc.
 
-### Premium Partners
+# 3. Run migrations and seed
+php artisan migrate --seed
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# 4. Start the development stack
+composer dev
+# This runs: php artisan serve, queue:listen, pail (logs), and npm dev concurrently
+```
 
-## Contributing
+## Environment Variables
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Variable | Description | Default |
+|---|---|---|
+| `OPENAI_API_KEY` | Your OpenAI API key | Required |
+| `OPENAI_MODEL` | GPT model to use | `gpt-4o` |
+| `OPENAI_MAX_TOKENS` | Max tokens per request | `2000` |
+| `OPENAI_TEMPERATURE` | Creativity (0-2) | `0.7` |
+| `QUEUE_CONNECTION` | Queue driver | `redis` |
+| `REDIS_HOST` | Redis host | `127.0.0.1` |
 
-## Code of Conduct
+## Chrome Extension Setup
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1. Open `chrome://extensions/` in Chrome
+2. Enable **Developer mode**
+3. Click **Load unpacked** → select the `chrome-extension/` folder
+4. Generate an API token: `POST /api/v1/auth/token` with email/password
+5. Paste the token in the extension popup
 
-## Security Vulnerabilities
+## API Endpoints
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/v1/auth/token` | None | Generate API token |
+| DELETE | `/api/v1/auth/token` | Sanctum | Revoke current token |
+| POST | `/api/v1/jobs/import` | Sanctum | Import job from Chrome extension |
+
+## Web Routes
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/dashboard` | Main dashboard with job tracker |
+| PATCH | `/applications/{id}/status` | Update application status |
+| POST | `/jobs/{id}/generate-cover-letter` | Queue AI cover letter generation |
+| POST | `/applications/{id}/interviews` | Schedule an interview |
+| PATCH | `/interviews/{id}` | Update interview |
+| DELETE | `/interviews/{id}` | Delete interview |
+| POST | `/referrals` | Add a referral contact |
+| PATCH | `/referrals/{id}` | Update referral status |
+| DELETE | `/referrals/{id}` | Remove referral |
+
+## Scheduled Commands
+
+| Command | Schedule | Description |
+|---|---|---|
+| `app:send-reminders` | Daily 8:00 AM IST | Interview + follow-up reminders |
+
+Add to your server's cron:
+```
+* * * * * php /path/to/artisan schedule:run >> /dev/null 2>&1
+```
+
+## Queue Jobs
+
+| Job | Trigger | Description |
+|---|---|---|
+| `GenerateAiCoverLetter` | Manual / Dashboard button | Calls OpenAI to generate cover letter |
+| `AnalyzeResumeMatch` | Auto on job import | Scores match + identifies missing skills |
+| `ParseIncomingEmail` | Email webhook | Matches recruiter emails to applications |
+
+## Running Tests
+
+```bash
+php artisan test
+```
+
+## Code Style
+
+```bash
+php vendor/bin/pint
+```
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT
